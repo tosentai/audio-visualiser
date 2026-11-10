@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>NEXUS-CORE // 3D Audio Visualizer</title>
+  <link rel="stylesheet" href="./style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- WebGL Canvas -->
+  <canvas class="webgl"></canvas>
+
+  <!-- Drag and drop zone overlay -->
+  <div id="drop-zone" class="drop-zone">
+    <div class="drop-zone-content">
+      <div class="drop-icon">✦</div>
+      <p class="drop-text">DROP AUDIO FILE HERE</p>
+      <span class="drop-subtext">Supports MP3, WAV, OGG, FLAC</span>
+    </div>
+  </div>
+
+  <!-- Intro Screen (Starts AudioContext on click for browser autoplay policies) -->
+  <div id="intro-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="card-badge">SYS.VER // 3.8.0</div>
+      <h1 class="glitch-title" data-text="NEXUS // CORE">NEXUS // CORE</h1>
+      <p class="modal-desc">
+        Interactive 3D Sci-Fi Audio Synthesizer & Frequency Reactive Visualizer powered by Three.js & Web Audio API.
+      </p>
+      
+      <div class="modal-actions">
+        <button id="btn-demo-start" class="btn btn-primary">
+          <span class="btn-icon">▶</span>
+          <span>LAUNCH WITH CYBER BEAT</span>
+        </button>
+        <button id="btn-mic-start" class="btn btn-secondary">
+          <span class="btn-icon">🎙</span>
+          <span>LIVE MIC INPUT</span>
+        </button>
+        <label class="btn btn-tertiary">
+          <span class="btn-icon">📂</span>
+          <span>LOAD CUSTOM AUDIO</span>
+          <input type="file" id="modal-file-input" accept="audio/*" hidden />
+        </label>
+      </div>
+
+      <div class="modal-tips">
+        <span>Tip: Drag & drop your own audio files at any time. Rotate & zoom with mouse.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HUD Interface -->
+  <div id="hud" class="hud-container hidden">
+    <!-- Top Bar -->
+    <header class="hud-header">
+      <div class="brand">
+        <span class="pulse-dot"></span>
+        <span class="brand-text">NEXUS // CORE</span>
+        <span class="track-status" id="track-status">IDLE</span>
+      </div>
+
+      <!-- Frequency Monitor Readout -->
+      <div class="frequency-meters">
+        <div class="meter-group">
+          <span class="meter-label">BASS</span>
+          <div class="meter-bar"><div id="meter-bass" class="meter-fill bass-fill"></div></div>
+        </div>
+        <div class="meter-group">
+          <span class="meter-label">MID</span>
+          <div class="meter-bar"><div id="meter-mid" class="meter-fill mid-fill"></div></div>
+        </div>
+        <div class="meter-group">
+          <span class="meter-label">TREBLE</span>
+          <div class="meter-bar"><div id="meter-treble" class="meter-fill treble-fill"></div></div>
+        </div>
+      </div>
+
+      <!-- Top Controls -->
+      <div class="top-actions">
+        <button id="btn-theme-cycle" class="hud-btn" title="Cycle Color Theme">🎨 THEME</button>
+        <button id="btn-fullscreen" class="hud-btn" title="Toggle Fullscreen">⛶</button>
+      </div>
+    </header>
+
+    <!-- Bottom Audio Control Dock -->
+    <footer class="hud-footer">
+      <div class="playback-controls">
+        <button id="btn-play-pause" class="dock-btn primary" title="Play / Pause">
+          <span id="play-icon">▶</span>
+        </button>
+        <div class="track-info">
+          <div id="track-title" class="track-title">Cyber Synthwave Beat</div>
+          <div id="time-display" class="time-display">00:00 / 00:00</div>
+        </div>
+      </div>
+
+      <div class="audio-source-selectors">
+        <button id="btn-dock-demo" class="dock-pill active">Synth Beat</button>
+        <button id="btn-dock-mic" class="dock-pill">Microphone</button>
+        <label class="dock-pill file-label">
+          Upload MP3
+          <input type="file" id="dock-file-input" accept="audio/*" hidden />
+        </label>
+      </div>
+
+      <div class="volume-control">
+        <span class="vol-icon">🔊</span>
+        <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.8" />
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
