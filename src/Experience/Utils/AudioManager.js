@@ -24,10 +24,12 @@ export default class AudioManager extends EventEmitter {
     this.beatIntensity = 0
     this.isBeat = false
 
-    // Beat detection history
-    this.beatThreshold = 1.3
-    this.beatDecayRate = 0.96
-    this.beatCutoff = 0.35
+    // Beat detection & dynamic auto-gain
+    this.energyHistory = []
+    this.maxObservedBass = 0.35
+    this.minObservedBass = 0.05
+    this.lastBeatTime = 0
+    this.beatDecayRate = 0.94
 
     // State
     this.isPlaying = false
@@ -54,7 +56,7 @@ export default class AudioManager extends EventEmitter {
 
       this.analyser = this.audioContext.createAnalyser()
       this.analyser.fftSize = this.fftSize
-      this.analyser.smoothingTimeConstant = 0.82
+      this.analyser.smoothingTimeConstant = 0.65
 
       this.gainNode = this.audioContext.createGain()
       this.gainNode.gain.setValueAtTime(this.volume, this.audioContext.currentTime)
@@ -408,12 +410,13 @@ export default class AudioManager extends EventEmitter {
   update() {
     if (!this.analyser || !this.isPlaying) {
       // Smooth decay when paused
-      this.bass *= 0.92
-      this.mid *= 0.92
-      this.treble *= 0.92
-      this.overall *= 0.92
-      this.smoothedBass *= 0.92
+      this.bass *= 0.90
+      this.mid *= 0.90
+      this.treble *= 0.90
+      this.overall *= 0.90
+      this.smoothedBass *= 0.90
       this.isBeat = false
+      this.beatIntensity = 0
       return
     }
 
@@ -422,48 +425,68 @@ export default class AudioManager extends EventEmitter {
 
     const binCount = this.frequencyData.length
 
-    // Frequency ranges:
-    // Bass: ~0 to 12% of bins
-    // Mid: ~12% to 45% of bins
-    // Treble: ~45% to 100% of bins
-    const bassEnd = Math.floor(binCount * 0.12)
-    const midEnd = Math.floor(binCount * 0.45)
+    // 1. ISOLATE TARGET FREQUENCIES
+    // True Sub & Kick range (Bins 1 to 4: ~40Hz to 340Hz)
+    const kickPeak = Math.max(
+      this.frequencyData[1] || 0,
+      this.frequencyData[2] || 0,
+      this.frequencyData[3] || 0,
+      this.frequencyData[4] || 0
+    ) / 255.0
 
-    let bassSum = 0
+    // Mid range (Bins 6 to 35: ~500Hz to 3000Hz)
     let midSum = 0
+    const midStart = 6
+    const midEnd = Math.min(35, binCount)
+    for (let i = midStart; i < midEnd; i++) {
+      midSum += this.frequencyData[i] / 255.0
+    }
+    const rawMid = midSum / (midEnd - midStart || 1)
+
+    // Treble range (Bins 35 to 140: ~3000Hz to 12000Hz)
     let trebleSum = 0
-    let totalSum = 0
+    const trebleStart = midEnd
+    const trebleEnd = Math.min(140, binCount)
+    for (let i = trebleStart; i < trebleEnd; i++) {
+      trebleSum += this.frequencyData[i] / 255.0
+    }
+    const rawTreble = trebleSum / (trebleEnd - trebleStart || 1)
 
-    for (let i = 0; i < binCount; i++) {
-      const val = this.frequencyData[i] / 255.0
-      totalSum += val
+    // 2. ADAPTIVE AUTO-GAIN CONTROL (Calibrates dynamically to any custom MP3)
+    this.maxObservedBass = Math.max(0.25, this.maxObservedBass * 0.996, kickPeak)
+    this.minObservedBass = Math.min(this.maxObservedBass * 0.45, this.minObservedBass * 1.002, kickPeak)
+    const bassRange = Math.max(0.12, this.maxObservedBass - this.minObservedBass)
 
-      if (i < bassEnd) {
-        bassSum += val
-      } else if (i < midEnd) {
-        midSum += val
-      } else {
-        trebleSum += val
-      }
+    // Normalized kick energy (always spans 0.0 to 1.0 regardless of MP3 volume)
+    const normalizedKick = Math.max(0, Math.min(1.0, (kickPeak - this.minObservedBass) / bassRange))
+
+    this.bass = Math.pow(normalizedKick, 1.25)
+    this.mid = Math.min(1.0, Math.pow(rawMid * 1.35, 1.1))
+    this.treble = Math.min(1.0, Math.pow(rawTreble * 1.45, 1.05))
+    this.overall = (this.bass + this.mid + this.treble) / 3.0
+
+    // Smooth baseline for fluid motion
+    this.smoothedBass += (this.bass - this.smoothedBass) * 0.20
+
+    // 3. STATISTICAL TRANSIENT BEAT DETECTION
+    this.energyHistory.push(normalizedKick)
+    if (this.energyHistory.length > 20) {
+      this.energyHistory.shift()
     }
 
-    const rawBass = bassSum / (bassEnd || 1)
-    const rawMid = midSum / ((midEnd - bassEnd) || 1)
-    const rawTreble = trebleSum / ((binCount - midEnd) || 1)
-    this.overall = totalSum / binCount
+    const avgEnergy = this.energyHistory.reduce((a, b) => a + b, 0) / this.energyHistory.length
+    const now = performance.now()
+    const timeSinceLastBeat = now - this.lastBeatTime
 
-    // Non-linear boost for massive visual impact
-    this.bass = Math.min(1.0, Math.pow(rawBass, 1.12) * 1.35)
-    this.mid = Math.min(1.0, Math.pow(rawMid, 1.15) * 1.2)
-    this.treble = Math.min(1.0, Math.pow(rawTreble, 1.1) * 1.15)
-
-    // Smooth bass for continuous fluid displacement
-    this.smoothedBass += (this.bass - this.smoothedBass) * 0.22
-
-    // Beat detection with sharper sensitivity
-    if (this.bass > this.beatCutoff && this.bass > this.smoothedBass * 1.18) {
+    // Trigger beat when instant kick spikes above local running average with a minimum 160ms gap
+    if (
+      timeSinceLastBeat > 160 &&
+      normalizedKick > 0.38 &&
+      normalizedKick > avgEnergy * 1.14
+    ) {
       this.isBeat = true
-      this.beatIntensity = Math.min(1.0, (this.bass - this.beatCutoff) * 2.4)
+      this.beatIntensity = Math.min(1.0, (normalizedKick - avgEnergy) * 2.2 + 0.35)
+      this.lastBeatTime = now
     } else {
       this.isBeat = false
       this.beatIntensity *= this.beatDecayRate

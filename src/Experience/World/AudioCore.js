@@ -135,7 +135,7 @@ export default class AudioCore {
           vRayIntensity = raySpikes;
 
           // Huge pulsation: on beats, rays burst outwards violently!
-          float rayPulse = raySpikes * (0.15 + pow(uBass, 1.35) * 3.6);
+          float rayPulse = raySpikes * (0.12 + pow(uBass, 1.2) * 4.2 + uMid * 0.5);
           float ripple = n2 * (0.04 + uTreble * 0.25);
 
           float displacement = (rayPulse + ripple) * uDisplacement;
@@ -226,16 +226,16 @@ export default class AudioCore {
 
     // Beat kick impulse: punches out the rays and core cleanly
     if (this.audio.isBeat) {
-      this.scaleVelocity += 0.35 + this.audio.beatIntensity * 0.7
-      this.cageRotation += (Math.random() - 0.5) * 1.2
+      this.scaleVelocity += 0.45 + this.audio.beatIntensity * 0.85
+      this.cageRotation += (Math.random() - 0.5) * 1.4
     }
 
-    // Spring physics: normal scale 0.9x when quiet, expands to 1.7x on drops
-    const targetScale = (0.85 + Math.pow(bass, 1.25) * 0.9) * this.coreBaseScale
-    const springForce = (targetScale - this.currentScale) * 0.32
-    this.scaleVelocity = (this.scaleVelocity + springForce) * 0.75
+    // Spring physics: normal scale 0.8x when quiet, expands to 1.85x on drops
+    const targetScale = (0.78 + Math.pow(bass, 1.2) * 1.15) * this.coreBaseScale
+    const springForce = (targetScale - this.currentScale) * 0.35
+    this.scaleVelocity = (this.scaleVelocity + springForce) * 0.72
     this.currentScale += this.scaleVelocity
-    this.currentScale = Math.max(0.6, Math.min(2.4, this.currentScale))
+    this.currentScale = Math.max(0.55, Math.min(2.5, this.currentScale))
 
     // Apply scale to core
     this.mesh.scale.set(this.currentScale, this.currentScale, this.currentScale)

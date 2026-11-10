@@ -73,8 +73,9 @@ export default class Environment {
 
     // Beat switching state
     this.beatsCounted = 0
+    this.beatsSinceLastSwitch = 0
     this.lastSwitchTime = 0
-    this.minSwitchInterval = 2.0 // seconds between major palette shifts
+    this.minSwitchInterval = 2.2 // seconds between major palette shifts
 
     this.coreLightBase = 1.0
     this.orbitLightBase = 1.2
@@ -118,14 +119,24 @@ export default class Environment {
     const mid = this.audio.mid
 
     // 1. AUTO BEAT COLOR SWITCHING
-    if (this.audio.isBeat) {
-      this.beatsCounted++
-      const canSwitch = (elapsed - this.lastSwitchTime) > this.minSwitchInterval
+    const timeSinceSwitch = elapsed - this.lastSwitchTime
 
-      if (canSwitch && (this.beatsCounted % 4 === 0 || this.audio.beatIntensity > 0.6)) {
+    if (this.audio.isBeat) {
+      this.beatsSinceLastSwitch++
+
+      // Switch when at least 4 beats occurred and cooldown elapsed, or on a punchy transient
+      if (timeSinceSwitch > this.minSwitchInterval && (this.beatsSinceLastSwitch >= 4 || this.audio.beatIntensity > 0.52)) {
         this.triggerNextPalette()
         this.lastSwitchTime = elapsed
+        this.beatsSinceLastSwitch = 0
       }
+    }
+
+    // Safety fallback: if music is playing, guarantee color evolution every 8 seconds
+    if (timeSinceSwitch > 8.0 && this.audio.isPlaying) {
+      this.triggerNextPalette()
+      this.lastSwitchTime = elapsed
+      this.beatsSinceLastSwitch = 0
     }
 
     // 2. Smoothly LERP active colors toward target palette
