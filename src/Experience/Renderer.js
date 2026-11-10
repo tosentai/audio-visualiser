@@ -18,7 +18,6 @@ export default class Renderer {
 
     this.setInstance()
     this.setPostProcessing()
-    this.setDebug()
   }
 
   setInstance() {
@@ -52,28 +51,18 @@ export default class Renderer {
     const renderPass = new RenderPass(this.scene, this.camera.instance)
     this.composer.addPass(renderPass)
 
-    // Unreal Bloom Pass - Balanced crisp neon glow
+    // Unreal Bloom Pass - Clean, crisp neon glow without blinding haze
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(this.sizes.width, this.sizes.height),
-      0.65,  // strength (reduced from 1.4 for clean, crisp visuals)
-      0.35,  // radius
-      0.35   // threshold
+      0.50,  // strength
+      0.28,  // radius
+      0.45   // threshold (preserves crisp shape and saturated colors)
     )
     this.composer.addPass(this.bloomPass)
 
     // Output Pass (Color space & tone mapping conversion)
     const outputPass = new OutputPass()
     this.composer.addPass(outputPass)
-  }
-
-  setDebug() {
-    if (this.debug.active) {
-      const folder = this.debug.ui.addFolder('Post-Processing (Bloom)')
-      folder.add(this.bloomPass, 'strength', 0, 3, 0.05).name('Glow Strength')
-      folder.add(this.bloomPass, 'radius', 0, 1.5, 0.05).name('Glow Radius')
-      folder.add(this.bloomPass, 'threshold', 0, 1, 0.02).name('Glow Threshold')
-      folder.add(this.instance, 'toneMappingExposure', 0.5, 2.5, 0.1).name('Exposure')
-    }
   }
 
   resize() {

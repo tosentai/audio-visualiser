@@ -37,6 +37,8 @@ export default class Experience {
     this.world = new World()
     this.ui = new Interface()
 
+    this.setCleanDebug()
+
     // Event listeners
     this.sizes.on('resize', () => {
       this.resize()
@@ -45,6 +47,19 @@ export default class Experience {
     this.time.on('tick', () => {
       this.update()
     })
+  }
+
+  setCleanDebug() {
+    if (this.debug.active && this.world.audioCore) {
+      const core = this.world.audioCore
+      const bloom = this.renderer.bloomPass
+
+      const folder = this.debug.ui.addFolder('⚡ Visualizer Controls')
+      folder.add(core.material.uniforms.uDisplacement, 'value', 0.2, 2.5, 0.05).name('Ray Pulse Power')
+      folder.add(core, 'coreBaseScale', 0.6, 2.0, 0.05).name('Core Scale')
+      folder.add(bloom, 'strength', 0.0, 1.5, 0.05).name('Neon Glow')
+      folder.add(core.material, 'wireframe').name('Wireframe Mode')
+    }
   }
 
   resize() {

@@ -18,7 +18,6 @@ export default class ParticleUniverse {
     this.setGeometry()
     this.setMaterial()
     this.setPoints()
-    this.setDebug()
   }
 
   setGeometry() {
@@ -120,17 +119,6 @@ export default class ParticleUniverse {
         }
       `
     })
-  }
-
-  setDebug() {
-    if (this.debug.active) {
-      const folder = this.debug.ui.addFolder('Cosmic Particles')
-      folder.add(this, 'particleSize', 0.2, 3.0, 0.1).name('Particle Size').onChange((val) => {
-        this.material.uniforms.uPixelRatio.value = this.experience.sizes.pixelRatio * val
-      })
-      folder.add(this, 'swirlSpeed', 0, 4.0, 0.1).name('Swirl Speed')
-      folder.add(this, 'shockwaveForce', 1.05, 2.0, 0.05).name('Beat Shockwave Force')
-    }
   }
 
   setPoints() {

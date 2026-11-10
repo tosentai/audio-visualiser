@@ -1,68 +1,72 @@
-# NEXUS-CORE // 3D Sci-Fi Audio Visualizer
+# NEXUS-CORE // 3D Sci-Fi Kinetic Audio Visualizer
 
-An interactive 3D WebGL audio visualizer built with **Three.js** and the **Web Audio API**, architected according to modern software design patterns (Singleton Facade, Observer/EventEmitter, Component-Entity modularity).
-
-![Visualizer Demo](https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80)
+An explosive, interactive 3D WebGL audio visualizer built with **Three.js** and the **Web Audio API**. Designed using modern software architecture standards (Singleton Facade, Observer/EventEmitter, Component-Entity modularity) and optimized for instant, zero-config deployment to **Vercel**.
 
 ---
 
-## 🚀 Key Features
+## ⚡ Live Highlights & Features
 
-- **Central Sci-Fi Kinetic Core (`AudioCore.js`)**:
-  - High-poly icosahedron powered by custom GLSL vertex displacement shaders with 3D simplex noise reacting dynamically to sub-bass and mid frequencies.
-  - Pulsing inner plasma core and rotating outer wireframe cage.
-- **Spectrum Frequency Pylons (`SpectrumRings.js`)**:
-  - Concentric dual rings of 192 audio-reactive towers utilizing `THREE.InstancedMesh` for 60+ FPS performance on mobile and desktop GPUs.
-- **Particle Universe (`ParticleUniverse.js`)**:
-  - 12,000 glowing stars with custom Point shaders that expand in a cosmic shockwave on detected beat kicks (`isBeat`).
-- **Dynamic Energy Shockwaves (`Shockwave.js`)**:
-  - Expanding glowing planar energy rings emitted synchronously on heavy bass drops.
+- **Dynamic Subwoofer Spring Core (`AudioCore.js`)**:
+  - Central icosahedron powered by custom GLSL vertex displacement with 3D Simplex noise.
+  - **Subwoofer Spring Physics**: Dramatically contracts to `0.4x` when quiet and violently surges up to `3.2x` on beat kicks with elastic snap-back.
+  - Pulsing inner plasma orb and rotating sci-fi cage that snaps and jitters with frequency drops.
+- **Explosive Laser Spectrum Rings (`SpectrumRings.js`)**:
+  - Dual rings with 192 frequency pylons rendered via `THREE.InstancedMesh` for locked 60+ FPS performance.
+  - **Dynamic Ring Radius**: Expands and contracts from `0.7x` to `1.7x` in sync with the rhythm.
+  - Pylons shoot up to 10+ units on drops with intense neon emission flashing.
+- **Auto Beat-Reactive Color Engine (`Environment.js`)**:
+  - Automatically transitions between 6 cyberpunk neon palettes (*Cyberpunk Neon, Acid Laser, Ultra Violet, Solar Inferno, Deep Abyss, Electric Gold*) upon detecting drops.
+  - Lights and atmosphere flare with intense ambient glow on bass impacts.
+- **Supersonic Shockwaves & Particle Cosmos (`Shockwave.js`, `ParticleUniverse.js`)**:
+  - 12,000 starry particles that expand into a galaxy shockwave on bass kicks.
+  - Up to 6 simultaneous planar energy rings traveling at supersonic speeds from the core.
+  - Camera shake responding to beat intensity.
 - **Full Web Audio Engine (`AudioManager.js`)**:
-  - **Procedural Cyber Synthwave Beat Generator**: Built-in 126 BPM algorithmic synthesizer (kick, bassline, snare, hi-hats, arpeggiator) running entirely in code without any audio files.
-  - **Drag & Drop Custom Audio**: Drag any MP3, WAV, FLAC, or OGG file onto the window to visualize your favorite music instantly.
-  - **Live Microphone Input**: Real-time visualization of ambient sound, voice, or room audio.
-- **Cinematic Post-Processing (`Renderer.js`)**:
-  - `EffectComposer` with `UnrealBloomPass` (neon bloom glow) and `OutputPass` (ACES Filmic tone mapping).
-- **Interactive UI & Themes**:
-  - OrbitControls (free rotation, pan, zoom, auto-rotate).
-  - 4 Futuristic themes: *Cyberpunk Neon, Electric Abyss, Solar Supernova, Matrix Emerald*.
-  - Fullscreen toggle, real-time frequency meter readout (Bass, Mid, Treble).
-  - Collapsible `lil-gui` debug panel for tweaking displacement, bloom, and lighting.
+  - **Built-in 126 BPM Procedural Synth Beat**: Zero external audio downloads required.
+  - **Drag & Drop Custom Audio**: Drop any MP3, WAV, FLAC, or OGG file onto the window.
+  - **Live Microphone Input**: Real-time room or voice audio visualization.
+- **Refined Cinematic Post-Processing (`Renderer.js`)**:
+  - Crisp `UnrealBloomPass` tuned for sharp geometric glow without hazy blur + ACES Filmic tone mapping.
+- **User Interface & Hotkeys**:
+  - `Space` — Play / Pause
+  - `F` — Fullscreen toggle
+  - `H` — Hide / Show HUD for clean cinematic viewing
+  - Fully reactive `lil-gui` panel for live tuning of pylons, core size, lighting, and particles.
 
 ---
 
-## 🏛️ Architecture & Clean Code
+## 🏛️ Code Architecture
 
-The codebase follows the production-grade OOP architecture popularized by Three.js Journey:
+Following production-grade patterns (Bruno Simon's Three.js Journey standard):
 
 ```text
 audio-visualizer/
-├── index.html                  # Responsive HTML shell with Sci-Fi HUD
-├── style.css                   # Cyberpunk glassmorphism styling
-├── vite.config.js              # Vite configuration
-├── vercel.json                 # Vercel deployment spec
+├── index.html                   # HTML shell with responsive HUD
+├── style.css                    # Cyberpunk glassmorphism styling
+├── vite.config.js               # Vite build configuration
+├── vercel.json                  # Vercel deployment specification
 ├── package.json
 └── src/
-    ├── main.js                 # Entry point
+    ├── main.js                  # Entry point
     └── Experience/
-        ├── Experience.js       # Master Singleton orchestrator
-        ├── Camera.js           # Perspective camera + OrbitControls + screen shake
-        ├── Renderer.js         # WebGLRenderer + Post-Processing pipeline
+        ├── Experience.js        # Master Singleton orchestrator
+        ├── Camera.js            # Perspective camera + OrbitControls + screen shake
+        ├── Renderer.js          # WebGLRenderer + UnrealBloomPass post-processing
         ├── Utils/
-        │   ├── EventEmitter.js # Type-safe observer pattern
-        │   ├── Sizes.js        # Viewport resize & device pixel ratio handling
-        │   ├── Time.js         # Tick loop with delta time & requestAnimationFrame
-        │   ├── Debug.js        # lil-gui interface integration
-        │   └── AudioManager.js # Web Audio API context, analyser & sound generator
+        │   ├── EventEmitter.js  # Loose coupling event emitter
+        │   ├── Sizes.js         # Resize & device pixel ratio handling
+        │   ├── Time.js          # Tick-loop with delta time & requestAnimationFrame
+        │   ├── Debug.js         # lil-gui interface integration
+        │   └── AudioManager.js  # Web Audio API engine & beat detection
         ├── World/
-        │   ├── World.js        # World coordinator
-        │   ├── Environment.js  # Atmosphere, fog & audio-reactive lights
-        │   ├── AudioCore.js    # GLSL-displaced kinetic 3D core
-        │   ├── SpectrumRings.js# InstancedMesh frequency equalizer pylons
-        │   ├── ParticleUniverse.js # 12k particle galaxy
-        │   └── Shockwave.js    # Dynamic beat-drop ring shockwaves
+        │   ├── World.js         # 3D Scene orchestrator
+        │   ├── Environment.js   # Dynamic lighting & auto beat color engine
+        │   ├── AudioCore.js     # Spring-physics kinetic 3D core & GLSL shaders
+        │   ├── SpectrumRings.js # InstancedMesh frequency pylons with expanding radius
+        │   ├── ParticleUniverse.js # 12,000 particle galaxy
+        │   └── Shockwave.js     # Supersonic energy rings
         └── UI/
-            └── Interface.js    # HUD, Drag-and-drop & user interaction
+            └── Interface.js     # HUD interaction & drag-and-drop
 ```
 
 ---
@@ -70,30 +74,23 @@ audio-visualizer/
 ## 🛠️ Local Development
 
 ```bash
-# 1. Install dependencies
-npm install
-
-# 2. Run local dev server with hot reload
+# Double-click start.bat (Windows) or run:
+cd audio-visualizer
 npm run dev
 
-# 3. Build optimized static production bundle
+# Production build
 npm run build
-
-# 4. Preview production build locally
-npm run preview
 ```
 
 ---
 
-## ⚡ Deployment to Vercel
+## 🚀 1-Click Deployment to Vercel
 
-This project is 100% static and zero-config ready for Vercel:
-
-1. Push this repository to **GitHub / GitLab**.
-2. Go to [vercel.com](https://vercel.com) and click **"Add New Project"**.
-3. Select your repository. Vercel automatically detects **Vite**:
-   - **Framework Preset**: `Vite`
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-4. Click **Deploy**. Your visualizer will be live in ~20 seconds with global CDN distribution!
-
+1. Push this repository to GitHub:
+   ```bash
+   git remote add origin https://github.com/<your-username>/<repo-name>.git
+   git push -u origin main
+   ```
+2. In [vercel.com](https://vercel.com), click **"Add New Project"** and select your repo.
+3. Vercel automatically detects **Vite** (`npm run build` -> `dist`).
+4. Click **Deploy** — live in ~20 seconds!

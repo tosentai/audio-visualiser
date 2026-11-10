@@ -76,13 +76,12 @@ export default class Environment {
     this.lastSwitchTime = 0
     this.minSwitchInterval = 2.0 // seconds between major palette shifts
 
-    this.coreLightBase = 1.5
+    this.coreLightBase = 1.0
     this.orbitLightBase = 1.2
-    this.lightPulseStrength = 8.0
+    this.lightPulseStrength = 2.5
 
     this.setFog()
     this.setLights()
-    this.setDebug()
   }
 
   setFog() {
@@ -91,19 +90,19 @@ export default class Environment {
 
   setLights() {
     // Ambient Light
-    this.ambientLight = new THREE.AmbientLight(this.currentColors.ambient, 1.2)
+    this.ambientLight = new THREE.AmbientLight(this.currentColors.ambient, 1.0)
     this.scene.add(this.ambientLight)
 
     // Dynamic Pulsing Point Lights
-    this.pointLight1 = new THREE.PointLight(this.currentColors.primary, 3.0, 45)
+    this.pointLight1 = new THREE.PointLight(this.currentColors.primary, 1.5, 30)
     this.pointLight1.position.set(0, 0, 0)
     this.scene.add(this.pointLight1)
 
-    this.pointLight2 = new THREE.PointLight(this.currentColors.secondary, 2.5, 35)
+    this.pointLight2 = new THREE.PointLight(this.currentColors.secondary, 1.8, 30)
     this.pointLight2.position.set(8, 6, 8)
     this.scene.add(this.pointLight2)
 
-    this.pointLight3 = new THREE.PointLight(this.currentColors.accent, 2.0, 35)
+    this.pointLight3 = new THREE.PointLight(this.currentColors.accent, 1.5, 30)
     this.pointLight3.position.set(-8, -6, -8)
     this.scene.add(this.pointLight3)
   }
@@ -111,15 +110,6 @@ export default class Environment {
   triggerNextPalette() {
     this.paletteIndex = (this.paletteIndex + 1) % COLOR_PALETTES.length
     this.targetPalette = COLOR_PALETTES[this.paletteIndex]
-  }
-
-  setDebug() {
-    if (this.debug.active) {
-      const folder = this.debug.ui.addFolder('Dynamic Lighting & Beat Pulse')
-      folder.add(this, 'coreLightBase', 0, 8, 0.2).name('Core Base Light')
-      folder.add(this, 'lightPulseStrength', 2, 20, 0.5).name('Beat Light Explosion')
-      folder.add(this, 'minSwitchInterval', 0.5, 6.0, 0.2).name('Color Shift Delay (s)')
-    }
   }
 
   update() {
@@ -162,10 +152,10 @@ export default class Environment {
       accent: '#' + this.currentColors.accent.getHexString()
     })
 
-    // 3. EXPLOSIVE LIGHT FLASH ON BASS KICKS
-    const kickBoost = Math.pow(bass, 1.8) * this.lightPulseStrength
-    this.pointLight1.intensity = this.coreLightBase + kickBoost * 2.2
-    this.pointLight2.intensity = this.orbitLightBase + mid * (this.lightPulseStrength * 0.8)
+    // 3. Balanced light pulse on bass kicks (rich color, no blinding glare)
+    const kickBoost = Math.pow(bass, 1.3) * this.lightPulseStrength
+    this.pointLight1.intensity = this.coreLightBase + kickBoost * 1.5
+    this.pointLight2.intensity = this.orbitLightBase + mid * 1.5
 
     // Orbit outer lights
     this.pointLight2.position.x = Math.sin(elapsed * 0.9) * 10

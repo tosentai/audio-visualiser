@@ -9,30 +9,30 @@ export default class AudioCore {
     this.time = this.experience.time
     this.debug = this.experience.debug
 
-    this.displacementStrength = 0.85
-    this.noiseSpeed = 0.9
+    // Balanced base dimensions
+    this.displacementStrength = 1.0
+    this.noiseSpeed = 0.95
     this.coreBaseScale = 1.0
-    this.rotationSpeed = 1.0
+    this.rotationSpeed = 0.85
 
-    // Dynamic spring physics for explosive bass throbbing
+    // Spring physics for punchy, rhythmic breathing
     this.currentScale = 1.0
     this.scaleVelocity = 0
-    this.cageRotationOffset = 0
+    this.cageRotation = 0
 
     this.setGeometry()
     this.setMaterial()
     this.setMesh()
-    this.setInnerCore()
+    this.setInnerNucleus()
     this.setWireframeCage()
-    this.setDebug()
   }
 
   setGeometry() {
-    this.geometry = new THREE.IcosahedronGeometry(2.2, 32)
+    // Normal balanced start radius (1.6)
+    this.geometry = new THREE.IcosahedronGeometry(1.6, 36)
   }
 
   setMaterial() {
-    // Custom Shader with Simplex Noise vertex displacement
     this.material = new THREE.ShaderMaterial({
       wireframe: false,
       transparent: true,
@@ -55,8 +55,9 @@ export default class AudioCore {
         varying vec3 vNormal;
         varying vec3 vPosition;
         varying float vDisplacement;
+        varying float vRayIntensity;
 
-        // 3D Simplex-like pseudo noise
+        // 3D Simplex noise
         vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
         vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
 
@@ -124,13 +125,20 @@ export default class AudioCore {
           vNormal = normal;
           vPosition = position;
 
-          // Multi-frequency noise sampling
-          vec3 noisePos = position * 0.9 + vec3(uTime * 0.4);
-          float lowNoise = snoise(noisePos);
-          float highNoise = snoise(position * 3.0 + vec3(uTime * 0.8));
+          // Radial energy ray noise calculation
+          vec3 rayPos = position * 1.4 + vec3(uTime * 0.45);
+          float n1 = snoise(rayPos);
+          float n2 = snoise(position * 3.5 - vec3(uTime * 0.8));
 
-          // Heavy explosive displacement from bass, fast ripples from treble
-          float displacement = (lowNoise * (0.1 + pow(uBass, 1.4) * 2.6) + highNoise * (0.05 + uTreble * 0.5)) * uDisplacement;
+          // Sharpen into distinct energetic rays/spikes ("лучи")
+          float raySpikes = pow(max(0.0, n1 + 0.35), 2.4);
+          vRayIntensity = raySpikes;
+
+          // Huge pulsation: on beats, rays burst outwards violently!
+          float rayPulse = raySpikes * (0.15 + pow(uBass, 1.35) * 3.6);
+          float ripple = n2 * (0.04 + uTreble * 0.25);
+
+          float displacement = (rayPulse + ripple) * uDisplacement;
           vDisplacement = displacement;
 
           vec3 newPosition = position + normal * displacement;
@@ -145,20 +153,25 @@ export default class AudioCore {
         varying vec3 vNormal;
         varying vec3 vPosition;
         varying float vDisplacement;
+        varying float vRayIntensity;
 
         void main() {
-          // Fresnel rim lighting
           vec3 viewDirection = normalize(-vPosition);
-          float fresnel = pow(1.0 - max(dot(viewDirection, vNormal), 0.0), 2.5);
+          float fresnel = pow(1.0 - max(dot(viewDirection, vNormal), 0.0), 2.2);
 
-          // Color blending based on displacement height and fresnel
-          float mixFactor = clamp((vDisplacement + 0.4) * 0.8, 0.0, 1.0);
-          vec3 baseColor = mix(uColorA, uColorB, mixFactor);
+          // Deep sleek crystal base color in crevasses (prevents white blowout)
+          vec3 deepBody = mix(vec3(0.04, 0.05, 0.12), uColorA * 0.35, vRayIntensity);
 
-          // Boost glow at edges and displacement peaks
-          vec3 finalColor = baseColor + (uColorA * fresnel * (1.2 + uBass * 1.5));
+          // Vivid saturated neon on rays and spikes
+          vec3 rayGlow = mix(uColorA, uColorB, clamp(vRayIntensity * 1.2, 0.0, 1.0));
 
-          gl_FragColor = vec4(finalColor, 0.92);
+          // Blend body into glowing rays
+          vec3 finalColor = mix(deepBody, rayGlow * (1.2 + uBass * 1.2), clamp(vRayIntensity * 1.4, 0.0, 1.0));
+
+          // Sharp neon rim lighting
+          finalColor += uColorA * fresnel * (0.7 + uBass * 0.9);
+
+          gl_FragColor = vec4(finalColor, 0.95);
         }
       `
     })
@@ -169,25 +182,25 @@ export default class AudioCore {
     this.scene.add(this.mesh)
   }
 
-  setInnerCore() {
-    // Glowing internal sphere
-    const innerGeo = new THREE.SphereGeometry(1.2, 24, 24)
-    this.innerMat = new THREE.MeshBasicMaterial({
-      color: '#ffffff',
+  setInnerNucleus() {
+    // Small dark-energy nucleus (not blinding white)
+    const nucleusGeo = new THREE.SphereGeometry(0.75, 24, 24)
+    this.nucleusMat = new THREE.MeshBasicMaterial({
+      color: '#080d20',
       wireframe: false
     })
-    this.innerMesh = new THREE.Mesh(innerGeo, this.innerMat)
-    this.scene.add(this.innerMesh)
+    this.nucleusMesh = new THREE.Mesh(nucleusGeo, this.nucleusMat)
+    this.scene.add(this.nucleusMesh)
   }
 
   setWireframeCage() {
-    // Outer rotating sci-fi cage
-    const cageGeo = new THREE.IcosahedronGeometry(3.6, 1)
+    // Outer rotating sci-fi cage (balanced radius)
+    const cageGeo = new THREE.IcosahedronGeometry(2.6, 1)
     this.cageMat = new THREE.MeshBasicMaterial({
       color: '#00f0ff',
       wireframe: true,
       transparent: true,
-      opacity: 0.25
+      opacity: 0.18
     })
     this.cageMesh = new THREE.Mesh(cageGeo, this.cageMat)
     this.scene.add(this.cageMesh)
@@ -197,18 +210,6 @@ export default class AudioCore {
     this.material.uniforms.uColorA.value.set(theme.primary)
     this.material.uniforms.uColorB.value.set(theme.secondary)
     this.cageMat.color.set(theme.primary)
-  }
-
-  setDebug() {
-    if (this.debug.active) {
-      const folder = this.debug.ui.addFolder('Audio Core (Central Entity)')
-      folder.add(this.material, 'wireframe').name('Wireframe Core')
-      folder.add(this.material.uniforms.uDisplacement, 'value', 0.1, 3.0, 0.05).name('Displacement (Waves)')
-      folder.add(this, 'coreBaseScale', 0.5, 2.5, 0.1).name('Core Base Size')
-      folder.add(this, 'rotationSpeed', 0, 4.0, 0.1).name('Rotation Speed')
-      folder.add(this, 'noiseSpeed', 0.1, 3.0, 0.1).name('Noise Frequency')
-      folder.add(this.cageMesh, 'visible').name('Outer Cage Visible')
-    }
   }
 
   update() {
@@ -223,46 +224,45 @@ export default class AudioCore {
     this.material.uniforms.uMid.value = mid
     this.material.uniforms.uTreble.value = treble
 
-    // Explosive impulse on beat kick
+    // Beat kick impulse: punches out the rays and core cleanly
     if (this.audio.isBeat) {
-      this.scaleVelocity += 0.55 + this.audio.beatIntensity * 1.1
-      this.cageRotationOffset += (Math.random() - 0.5) * 1.8
+      this.scaleVelocity += 0.35 + this.audio.beatIntensity * 0.7
+      this.cageRotation += (Math.random() - 0.5) * 1.2
     }
 
-    // Dynamic spring physics: collapses small when bass is low (0.55), surges huge on drop (2.5+)
-    const targetScale = (0.55 + Math.pow(bass, 1.3) * 1.6) * this.coreBaseScale
-    const springForce = (targetScale - this.currentScale) * 0.38
-    this.scaleVelocity = (this.scaleVelocity + springForce) * 0.70 // snappy damping
+    // Spring physics: normal scale 0.9x when quiet, expands to 1.7x on drops
+    const targetScale = (0.85 + Math.pow(bass, 1.25) * 0.9) * this.coreBaseScale
+    const springForce = (targetScale - this.currentScale) * 0.32
+    this.scaleVelocity = (this.scaleVelocity + springForce) * 0.75
     this.currentScale += this.scaleVelocity
-    this.currentScale = Math.max(0.35, Math.min(3.4, this.currentScale))
+    this.currentScale = Math.max(0.6, Math.min(2.4, this.currentScale))
 
-    // Apply scale to main mesh
+    // Apply scale to core
     this.mesh.scale.set(this.currentScale, this.currentScale, this.currentScale)
 
-    // Slow organic rotation + beat jitter
-    this.mesh.rotation.y = elapsed * 0.15 * this.rotationSpeed
-    this.mesh.rotation.x = elapsed * 0.08 * this.rotationSpeed
+    // Smooth organic rotation
+    this.mesh.rotation.y = elapsed * 0.18 * this.rotationSpeed
+    this.mesh.rotation.x = elapsed * 0.10 * this.rotationSpeed
 
-    // Inner core violently throbs with bass
-    const innerScale = (0.4 + Math.pow(bass, 1.5) * 2.2) * this.coreBaseScale
-    this.innerMesh.scale.set(innerScale, innerScale, innerScale)
+    // Nucleus scales subtly inside
+    const nucleusScale = (0.8 + bass * 0.45) * this.currentScale
+    this.nucleusMesh.scale.set(nucleusScale, nucleusScale, nucleusScale)
 
-    // Outer cage expands and snaps on beats
-    const cageScale = this.currentScale * (1.15 + bass * 0.35)
+    // Cage scales and turns cleanly
+    const cageScale = this.currentScale * (1.1 + bass * 0.25)
     this.cageMesh.scale.set(cageScale, cageScale, cageScale)
-    this.cageMesh.rotation.y = -elapsed * 0.25 * this.rotationSpeed + this.cageRotationOffset
-    this.cageMesh.rotation.z = elapsed * 0.15 * this.rotationSpeed + this.cageRotationOffset
-    this.cageRotationOffset *= 0.90
-    this.cageMat.opacity = 0.15 + bass * 0.55
+    this.cageMesh.rotation.y = -elapsed * 0.22 * this.rotationSpeed + this.cageRotation
+    this.cageMesh.rotation.z = elapsed * 0.12 * this.rotationSpeed
+    this.cageRotation *= 0.92
+    this.cageMat.opacity = 0.12 + bass * 0.35
   }
 
   destroy() {
     this.geometry.dispose()
     this.material.dispose()
-    this.innerMesh.geometry.dispose()
-    this.innerMat.dispose()
+    this.nucleusMesh.geometry.dispose()
+    this.nucleusMat.dispose()
     this.cageMesh.geometry.dispose()
     this.cageMat.dispose()
   }
 }
-
