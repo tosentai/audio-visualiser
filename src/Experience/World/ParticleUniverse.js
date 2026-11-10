@@ -165,10 +165,10 @@ export default class ParticleUniverse {
     // Slowly rotate galaxy scaled by swirlSpeed
     this.points.rotation.y = elapsed * 0.04 * this.swirlSpeed
 
-    // Push particles out during heavy beat drops
+    // Push particles out violently during heavy beat drops
     if (this.audio.isBeat) {
-      this.expansion = this.shockwaveForce
-      this.experience.camera.shake(0.08)
+      this.expansion = 1.0 + (this.shockwaveForce - 1.0) * (0.8 + this.audio.beatIntensity * 1.4)
+      this.experience.camera.shake(0.08 + this.audio.beatIntensity * 0.18)
     } else {
       this.expansion += (1.0 - this.expansion) * 0.08
     }

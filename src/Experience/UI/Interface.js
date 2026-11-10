@@ -29,14 +29,13 @@ export default class Interface {
     this.meterTreble = document.getElementById('meter-treble')
 
     this.volumeSlider = document.getElementById('volume-slider')
-    this.btnThemeCycle = document.getElementById('btn-theme-cycle')
     this.btnFullscreen = document.getElementById('btn-fullscreen')
     this.timeDisplay = document.getElementById('time-display')
 
     this.setupModalEvents()
     this.setupPlaybackEvents()
     this.setupDragAndDrop()
-    this.setupThemeAndFullscreen()
+    this.setupFullscreen()
     this.setupAudioListeners()
     this.setupKeyboardShortcuts()
   }
@@ -138,12 +137,7 @@ export default class Interface {
     })
   }
 
-  setupThemeAndFullscreen() {
-    this.btnThemeCycle.addEventListener('click', () => {
-      const newTheme = this.world.environment.cycleTheme()
-      this.btnThemeCycle.textContent = `🎨 ${newTheme.name.toUpperCase().split(' ')[0]}`
-    })
-
+  setupFullscreen() {
     this.btnFullscreen.addEventListener('click', () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {})
@@ -168,9 +162,6 @@ export default class Interface {
         } else {
           this.audio.togglePlay()
         }
-      } else if (e.code === 'KeyT') {
-        const newTheme = this.world.environment.cycleTheme()
-        this.btnThemeCycle.textContent = `🎨 ${newTheme.name.toUpperCase().split(' ')[0]}`
       } else if (e.code === 'KeyF') {
         if (!document.fullscreenElement) {
           document.documentElement.requestFullscreen().catch(() => {})

@@ -57,7 +57,7 @@ export default class Camera {
   }
 
   shake(amount) {
-    this.shakeIntensity = Math.min(this.shakeIntensity + amount, 0.45)
+    this.shakeIntensity = Math.min(this.shakeIntensity + amount, 0.65)
   }
 
   update() {

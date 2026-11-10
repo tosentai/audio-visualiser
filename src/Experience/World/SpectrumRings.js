@@ -93,10 +93,24 @@ export default class SpectrumRings {
     const elapsed = this.time.elapsed
     const freqData = this.audio.frequencyData
     const dataLen = freqData.length
+    const bass = this.audio.bass
+    const isBeat = this.audio.isBeat
+    const beatIntensity = this.audio.beatIntensity
 
-    // Ring 1 rotation and scale update
-    this.ring1.rotation.y = elapsed * 0.1
-    this.ring2.rotation.y = -elapsed * 0.12
+    // Ring rotations accelerate during heavy drops
+    const rotSpeed = 0.12 + bass * 0.28
+    this.ring1.rotation.y = elapsed * rotSpeed
+    this.ring2.rotation.y = -elapsed * (rotSpeed * 1.25)
+
+    // Dynamic radius expansion: contracts when quiet (0.75x), erupts outwards on drops (1.7x+)
+    const radiusMultiplier1 = 0.72 + Math.pow(bass, 1.3) * 0.75 + (isBeat ? beatIntensity * 0.45 : 0)
+    const radiusMultiplier2 = 0.78 + Math.pow(bass, 1.3) * 0.70 + (isBeat ? beatIntensity * 0.50 : 0)
+
+    const activeRadius1 = this.radius * radiusMultiplier1
+    const activeRadius2 = this.secondaryRadius * radiusMultiplier2
+
+    // Flash beam neon brightness on beats
+    this.material.emissiveIntensity = 0.35 + Math.pow(bass, 1.4) * 2.8
 
     for (let i = 0; i < this.barCount; i++) {
       const angle = (i / this.barCount) * Math.PI * 2
@@ -105,28 +119,30 @@ export default class SpectrumRings {
       const binIndex = Math.floor((i / this.barCount) * (dataLen * 0.65))
       const rawValue = (freqData[binIndex] || 0) / 255.0
 
-      // Dynamic height multiplied by heightScale
-      const height = (0.2 + Math.pow(rawValue, 1.4) * 4.2) * this.heightScale
+      // Beams shoot up aggressively on drops and shrink down when quiet
+      const beatSpike = isBeat ? Math.sin(angle * 4 + elapsed * 6) * 2.0 * beatIntensity : 0
+      const height1 = (0.08 + Math.pow(rawValue, 1.2) * 8.2 + Math.max(0, beatSpike)) * this.heightScale
 
       // Position along circumference
-      const x1 = Math.cos(angle) * this.radius
-      const z1 = Math.sin(angle) * this.radius
+      const x1 = Math.cos(angle) * activeRadius1
+      const z1 = Math.sin(angle) * activeRadius1
 
       this.dummy.position.set(x1, 0, z1)
       this.dummy.rotation.set(0, -angle + Math.PI / 2, 0)
-      this.dummy.scale.set(this.barThickness, height, this.barThickness)
+      this.dummy.scale.set(this.barThickness, height1, this.barThickness)
       this.dummy.updateMatrix()
 
       this.ring1.setMatrixAt(i, this.dummy.matrix)
 
-      // Ring 2 (outer)
-      const x2 = Math.cos(angle) * this.secondaryRadius
-      const z2 = Math.sin(angle) * this.secondaryRadius
-      const height2 = (0.2 + Math.pow((freqData[dataLen - 1 - binIndex] || 0) / 255.0, 1.4) * 3.5) * this.heightScale
+      // Ring 2 (outer inverted beams)
+      const x2 = Math.cos(angle) * activeRadius2
+      const z2 = Math.sin(angle) * activeRadius2
+      const rawVal2 = (freqData[dataLen - 1 - binIndex] || 0) / 255.0
+      const height2 = (0.08 + Math.pow(rawVal2, 1.2) * 7.0 + (isBeat ? beatIntensity * 2.5 : 0)) * this.heightScale
 
       this.dummy.position.set(x2, 0, z2)
       this.dummy.rotation.set(0, -angle + Math.PI / 2, Math.PI) // mirrored downwards
-      this.dummy.scale.set(this.barThickness * 0.9, height2, this.barThickness * 0.9)
+      this.dummy.scale.set(this.barThickness * 0.85, height2, this.barThickness * 0.85)
       this.dummy.updateMatrix()
 
       this.ring2.setMatrixAt(i, this.dummy.matrix)

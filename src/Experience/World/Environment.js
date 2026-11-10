@@ -1,38 +1,54 @@
 import * as THREE from 'three'
 import Experience from '../Experience.js'
 
-export const COLOR_THEMES = [
+export const COLOR_PALETTES = [
   {
     name: 'Cyberpunk Neon',
-    primary: '#00f0ff',
-    secondary: '#ff007f',
-    accent: '#ffe600',
-    ambient: '#090a18',
-    fog: '#05060f'
+    primary: new THREE.Color('#00f0ff'),
+    secondary: new THREE.Color('#ff007f'),
+    accent: new THREE.Color('#ffe600'),
+    ambient: new THREE.Color('#090a18'),
+    fog: new THREE.Color('#05060f')
   },
   {
-    name: 'Electric Abyss',
-    primary: '#0088ff',
-    secondary: '#7b00ff',
-    accent: '#00ffcc',
-    ambient: '#05071a',
-    fog: '#03040c'
+    name: 'Acid Laser',
+    primary: new THREE.Color('#00ff66'),
+    secondary: new THREE.Color('#ff0055'),
+    accent: new THREE.Color('#00ffff'),
+    ambient: new THREE.Color('#031206'),
+    fog: new THREE.Color('#020904')
   },
   {
-    name: 'Solar Supernova',
-    primary: '#ff5500',
-    secondary: '#ff0044',
-    accent: '#ffcc00',
-    ambient: '#160805',
-    fog: '#0a0303'
+    name: 'Ultra Violet',
+    primary: new THREE.Color('#9d00ff'),
+    secondary: new THREE.Color('#00f0ff'),
+    accent: new THREE.Color('#ff00aa'),
+    ambient: new THREE.Color('#0d051a'),
+    fog: new THREE.Color('#06020c')
   },
   {
-    name: 'Matrix Emerald',
-    primary: '#00ff66',
-    secondary: '#00aa44',
-    accent: '#88ff00',
-    ambient: '#021208',
-    fog: '#010804'
+    name: 'Solar Inferno',
+    primary: new THREE.Color('#ff3300'),
+    secondary: new THREE.Color('#ffaa00'),
+    accent: new THREE.Color('#ff0055'),
+    ambient: new THREE.Color('#160604'),
+    fog: new THREE.Color('#0c0201')
+  },
+  {
+    name: 'Deep Abyss',
+    primary: new THREE.Color('#0066ff'),
+    secondary: new THREE.Color('#00ffcc'),
+    accent: new THREE.Color('#7700ff'),
+    ambient: new THREE.Color('#04091a'),
+    fog: new THREE.Color('#02050e')
+  },
+  {
+    name: 'Electric Gold',
+    primary: new THREE.Color('#ffcc00'),
+    secondary: new THREE.Color('#ff0033'),
+    accent: new THREE.Color('#00ffff'),
+    ambient: new THREE.Color('#181204'),
+    fog: new THREE.Color('#0a0701')
   }
 ]
 
@@ -43,12 +59,26 @@ export default class Environment {
     this.audio = this.experience.audio
     this.debug = this.experience.debug
 
-    this.currentThemeIndex = 0
-    this.theme = COLOR_THEMES[this.currentThemeIndex]
+    this.paletteIndex = 0
+    this.targetPalette = COLOR_PALETTES[this.paletteIndex]
 
-    this.coreLightBase = 2.0
-    this.orbitLightBase = 1.5
-    this.lightPulseStrength = 4.0
+    // Active smoothly interpolated colors
+    this.currentColors = {
+      primary: this.targetPalette.primary.clone(),
+      secondary: this.targetPalette.secondary.clone(),
+      accent: this.targetPalette.accent.clone(),
+      ambient: this.targetPalette.ambient.clone(),
+      fog: this.targetPalette.fog.clone()
+    }
+
+    // Beat switching state
+    this.beatsCounted = 0
+    this.lastSwitchTime = 0
+    this.minSwitchInterval = 2.0 // seconds between major palette shifts
+
+    this.coreLightBase = 1.5
+    this.orbitLightBase = 1.2
+    this.lightPulseStrength = 8.0
 
     this.setFog()
     this.setLights()
@@ -56,78 +86,92 @@ export default class Environment {
   }
 
   setFog() {
-    this.scene.fog = new THREE.FogExp2(this.theme.fog, 0.022)
+    this.scene.fog = new THREE.FogExp2(this.currentColors.fog, 0.02)
   }
 
   setLights() {
     // Ambient Light
-    this.ambientLight = new THREE.AmbientLight(this.theme.ambient, 1.2)
+    this.ambientLight = new THREE.AmbientLight(this.currentColors.ambient, 1.2)
     this.scene.add(this.ambientLight)
 
     // Dynamic Pulsing Point Lights
-    this.pointLight1 = new THREE.PointLight(this.theme.primary, 3.0, 35)
+    this.pointLight1 = new THREE.PointLight(this.currentColors.primary, 3.0, 45)
     this.pointLight1.position.set(0, 0, 0)
     this.scene.add(this.pointLight1)
 
-    this.pointLight2 = new THREE.PointLight(this.theme.secondary, 2.5, 30)
+    this.pointLight2 = new THREE.PointLight(this.currentColors.secondary, 2.5, 35)
     this.pointLight2.position.set(8, 6, 8)
     this.scene.add(this.pointLight2)
 
-    this.pointLight3 = new THREE.PointLight(this.theme.accent, 2.0, 30)
+    this.pointLight3 = new THREE.PointLight(this.currentColors.accent, 2.0, 35)
     this.pointLight3.position.set(-8, -6, -8)
     this.scene.add(this.pointLight3)
   }
 
-  cycleTheme() {
-    this.currentThemeIndex = (this.currentThemeIndex + 1) % COLOR_THEMES.length
-    this.applyTheme(COLOR_THEMES[this.currentThemeIndex])
-    return this.theme
-  }
-
-  applyTheme(theme) {
-    this.theme = theme
-
-    if (this.scene.fog) {
-      this.scene.fog.color.set(theme.fog)
-    }
-
-    this.ambientLight.color.set(theme.ambient)
-    this.pointLight1.color.set(theme.primary)
-    this.pointLight2.color.set(theme.secondary)
-    this.pointLight3.color.set(theme.accent)
-
-    // Notify other world entities to update materials
-    this.experience.world.onThemeChanged(this.theme)
+  triggerNextPalette() {
+    this.paletteIndex = (this.paletteIndex + 1) % COLOR_PALETTES.length
+    this.targetPalette = COLOR_PALETTES[this.paletteIndex]
   }
 
   setDebug() {
     if (this.debug.active) {
-      const folder = this.debug.ui.addFolder('Environment & Lights')
-      folder.add(this, 'coreLightBase', 0, 10, 0.2).name('Core Light Base')
-      folder.add(this, 'orbitLightBase', 0, 8, 0.2).name('Orbital Light Base')
-      folder.add(this, 'lightPulseStrength', 0, 10, 0.2).name('Audio Light Pulse')
-      folder.add(this.ambientLight, 'intensity', 0, 4, 0.1).name('Ambient Light')
-      if (this.scene.fog) {
-        folder.add(this.scene.fog, 'density', 0.005, 0.08, 0.002).name('Fog Density')
-      }
+      const folder = this.debug.ui.addFolder('Dynamic Lighting & Beat Pulse')
+      folder.add(this, 'coreLightBase', 0, 8, 0.2).name('Core Base Light')
+      folder.add(this, 'lightPulseStrength', 2, 20, 0.5).name('Beat Light Explosion')
+      folder.add(this, 'minSwitchInterval', 0.5, 6.0, 0.2).name('Color Shift Delay (s)')
     }
   }
 
   update() {
+    const elapsed = this.experience.time.elapsed
     const bass = this.audio.bass
     const mid = this.audio.mid
 
-    // React point light intensity with audio based on user base values
-    this.pointLight1.intensity = this.coreLightBase + bass * this.lightPulseStrength
-    this.pointLight2.intensity = this.orbitLightBase + mid * (this.lightPulseStrength * 0.75)
+    // 1. AUTO BEAT COLOR SWITCHING
+    if (this.audio.isBeat) {
+      this.beatsCounted++
+      const canSwitch = (elapsed - this.lastSwitchTime) > this.minSwitchInterval
 
-    // Orbit outer lights smoothly
-    const elapsed = this.experience.time.elapsed
-    this.pointLight2.position.x = Math.sin(elapsed * 0.7) * 9
-    this.pointLight2.position.z = Math.cos(elapsed * 0.7) * 9
+      if (canSwitch && (this.beatsCounted % 4 === 0 || this.audio.beatIntensity > 0.6)) {
+        this.triggerNextPalette()
+        this.lastSwitchTime = elapsed
+      }
+    }
 
-    this.pointLight3.position.x = Math.sin(-elapsed * 0.5) * 9
-    this.pointLight3.position.z = Math.cos(-elapsed * 0.5) * 9
+    // 2. Smoothly LERP active colors toward target palette
+    const lerpSpeed = 0.06
+    this.currentColors.primary.lerp(this.targetPalette.primary, lerpSpeed)
+    this.currentColors.secondary.lerp(this.targetPalette.secondary, lerpSpeed)
+    this.currentColors.accent.lerp(this.targetPalette.accent, lerpSpeed)
+    this.currentColors.ambient.lerp(this.targetPalette.ambient, lerpSpeed)
+    this.currentColors.fog.lerp(this.targetPalette.fog, lerpSpeed)
+
+    // Apply colors to scene & fog
+    if (this.scene.fog) {
+      this.scene.fog.color.copy(this.currentColors.fog)
+    }
+    this.ambientLight.color.copy(this.currentColors.ambient)
+    this.pointLight1.color.copy(this.currentColors.primary)
+    this.pointLight2.color.copy(this.currentColors.secondary)
+    this.pointLight3.color.copy(this.currentColors.accent)
+
+    // Notify world components with current dynamic colors
+    this.experience.world.onThemeChanged({
+      primary: '#' + this.currentColors.primary.getHexString(),
+      secondary: '#' + this.currentColors.secondary.getHexString(),
+      accent: '#' + this.currentColors.accent.getHexString()
+    })
+
+    // 3. EXPLOSIVE LIGHT FLASH ON BASS KICKS
+    const kickBoost = Math.pow(bass, 1.8) * this.lightPulseStrength
+    this.pointLight1.intensity = this.coreLightBase + kickBoost * 2.2
+    this.pointLight2.intensity = this.orbitLightBase + mid * (this.lightPulseStrength * 0.8)
+
+    // Orbit outer lights
+    this.pointLight2.position.x = Math.sin(elapsed * 0.9) * 10
+    this.pointLight2.position.z = Math.cos(elapsed * 0.9) * 10
+
+    this.pointLight3.position.x = Math.sin(-elapsed * 0.7) * 10
+    this.pointLight3.position.z = Math.cos(-elapsed * 0.7) * 10
   }
 }
-

@@ -452,18 +452,18 @@ export default class AudioManager extends EventEmitter {
     const rawTreble = trebleSum / ((binCount - midEnd) || 1)
     this.overall = totalSum / binCount
 
-    // Non-linear boost for visual impact
-    this.bass = Math.pow(rawBass, 1.3)
-    this.mid = Math.pow(rawMid, 1.2)
-    this.treble = Math.pow(rawTreble, 1.1)
+    // Non-linear boost for massive visual impact
+    this.bass = Math.min(1.0, Math.pow(rawBass, 1.12) * 1.35)
+    this.mid = Math.min(1.0, Math.pow(rawMid, 1.15) * 1.2)
+    this.treble = Math.min(1.0, Math.pow(rawTreble, 1.1) * 1.15)
 
     // Smooth bass for continuous fluid displacement
-    this.smoothedBass += (this.bass - this.smoothedBass) * 0.2
+    this.smoothedBass += (this.bass - this.smoothedBass) * 0.22
 
-    // Beat detection
-    if (this.bass > this.beatCutoff && this.bass > this.smoothedBass * this.beatThreshold) {
+    // Beat detection with sharper sensitivity
+    if (this.bass > this.beatCutoff && this.bass > this.smoothedBass * 1.18) {
       this.isBeat = true
-      this.beatIntensity = Math.min(1.0, (this.bass - this.beatCutoff) * 2.0)
+      this.beatIntensity = Math.min(1.0, (this.bass - this.beatCutoff) * 2.4)
     } else {
       this.isBeat = false
       this.beatIntensity *= this.beatDecayRate

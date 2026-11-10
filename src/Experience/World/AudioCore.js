@@ -14,6 +14,11 @@ export default class AudioCore {
     this.coreBaseScale = 1.0
     this.rotationSpeed = 1.0
 
+    // Dynamic spring physics for explosive bass throbbing
+    this.currentScale = 1.0
+    this.scaleVelocity = 0
+    this.cageRotationOffset = 0
+
     this.setGeometry()
     this.setMaterial()
     this.setMesh()
@@ -124,8 +129,8 @@ export default class AudioCore {
           float lowNoise = snoise(noisePos);
           float highNoise = snoise(position * 3.0 + vec3(uTime * 0.8));
 
-          // Heavy displacement from bass, fast ripples from treble
-          float displacement = (lowNoise * (0.3 + uBass * 1.4) + highNoise * (0.1 + uTreble * 0.4)) * uDisplacement;
+          // Heavy explosive displacement from bass, fast ripples from treble
+          float displacement = (lowNoise * (0.1 + pow(uBass, 1.4) * 2.6) + highNoise * (0.05 + uTreble * 0.5)) * uDisplacement;
           vDisplacement = displacement;
 
           vec3 newPosition = position + normal * displacement;
@@ -218,23 +223,37 @@ export default class AudioCore {
     this.material.uniforms.uMid.value = mid
     this.material.uniforms.uTreble.value = treble
 
-    // Slow organic rotation scaled by user rotationSpeed
+    // Explosive impulse on beat kick
+    if (this.audio.isBeat) {
+      this.scaleVelocity += 0.55 + this.audio.beatIntensity * 1.1
+      this.cageRotationOffset += (Math.random() - 0.5) * 1.8
+    }
+
+    // Dynamic spring physics: collapses small when bass is low (0.55), surges huge on drop (2.5+)
+    const targetScale = (0.55 + Math.pow(bass, 1.3) * 1.6) * this.coreBaseScale
+    const springForce = (targetScale - this.currentScale) * 0.38
+    this.scaleVelocity = (this.scaleVelocity + springForce) * 0.70 // snappy damping
+    this.currentScale += this.scaleVelocity
+    this.currentScale = Math.max(0.35, Math.min(3.4, this.currentScale))
+
+    // Apply scale to main mesh
+    this.mesh.scale.set(this.currentScale, this.currentScale, this.currentScale)
+
+    // Slow organic rotation + beat jitter
     this.mesh.rotation.y = elapsed * 0.15 * this.rotationSpeed
     this.mesh.rotation.x = elapsed * 0.08 * this.rotationSpeed
 
-    // Base mesh scaling
-    this.mesh.scale.set(this.coreBaseScale, this.coreBaseScale, this.coreBaseScale)
+    // Inner core violently throbs with bass
+    const innerScale = (0.4 + Math.pow(bass, 1.5) * 2.2) * this.coreBaseScale
+    this.innerMesh.scale.set(innerScale, innerScale, innerScale)
 
-    // Inner core scales with bass
-    const coreScale = (1.0 + bass * 0.65) * this.coreBaseScale
-    this.innerMesh.scale.set(coreScale, coreScale, coreScale)
-
-    // Outer cage counter-rotation and beat pulse
-    this.cageMesh.rotation.y = -elapsed * 0.25 * this.rotationSpeed
-    this.cageMesh.rotation.z = elapsed * 0.12 * this.rotationSpeed
-    const cageScale = (1.0 + bass * 0.18) * this.coreBaseScale
+    // Outer cage expands and snaps on beats
+    const cageScale = this.currentScale * (1.15 + bass * 0.35)
     this.cageMesh.scale.set(cageScale, cageScale, cageScale)
-    this.cageMat.opacity = 0.2 + bass * 0.35
+    this.cageMesh.rotation.y = -elapsed * 0.25 * this.rotationSpeed + this.cageRotationOffset
+    this.cageMesh.rotation.z = elapsed * 0.15 * this.rotationSpeed + this.cageRotationOffset
+    this.cageRotationOffset *= 0.90
+    this.cageMat.opacity = 0.15 + bass * 0.55
   }
 
   destroy() {
