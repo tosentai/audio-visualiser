@@ -59,6 +59,8 @@ export default class Experience {
       folder.add(core, 'coreBaseScale', 0.6, 2.0, 0.05).name('Core Scale')
       folder.add(bloom, 'strength', 0.0, 1.5, 0.05).name('Neon Glow')
       folder.add(core.material, 'wireframe').name('Wireframe Mode')
+      folder.open()
+      this.debug.ui.open()
     }
   }
 

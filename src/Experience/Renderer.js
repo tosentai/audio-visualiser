@@ -54,9 +54,9 @@ export default class Renderer {
     // Unreal Bloom Pass - Clean, crisp neon glow without blinding haze
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(this.sizes.width, this.sizes.height),
-      0.50,  // strength
+      0.2,   // default strength matching user preference
       0.28,  // radius
-      0.45   // threshold (preserves crisp shape and saturated colors)
+      0.45   // threshold
     )
     this.composer.addPass(this.bloomPass)
 

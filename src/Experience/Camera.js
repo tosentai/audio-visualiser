@@ -11,7 +11,7 @@ export default class Camera {
     this.debug = this.experience.debug
 
     this.shakeIntensity = 0
-    this.basePosition = new THREE.Vector3(0, 4, 14)
+    this.basePosition = new THREE.Vector3(0, 4, 24)
 
     this.setInstance()
     this.setControls()

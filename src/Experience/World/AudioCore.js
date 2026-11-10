@@ -34,7 +34,7 @@ export default class AudioCore {
 
   setMaterial() {
     this.material = new THREE.ShaderMaterial({
-      wireframe: false,
+      wireframe: true,
       transparent: true,
       uniforms: {
         uTime: { value: 0 },
