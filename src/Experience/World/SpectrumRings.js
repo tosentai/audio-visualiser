@@ -13,6 +13,8 @@ export default class SpectrumRings {
     this.barCount = 96
     this.radius = 5.2
     this.secondaryRadius = 7.0
+    this.heightScale = 1.0
+    this.barThickness = 1.0
 
     this.dummy = new THREE.Object3D()
     this.colorA = new THREE.Color('#00f0ff')
@@ -27,19 +29,20 @@ export default class SpectrumRings {
     const geometry = new THREE.BoxGeometry(0.12, 1.0, 0.22)
     geometry.translate(0, 0.5, 0) // anchor at base
 
-    const material = new THREE.MeshStandardMaterial({
-      roughness: 0.2,
-      metalness: 0.8,
+    this.material = new THREE.MeshStandardMaterial({
+      roughness: 0.15,
+      metalness: 0.85,
       emissive: '#002244',
-      emissiveIntensity: 0.6
+      emissiveIntensity: 0.8,
+      wireframe: false
     })
 
     // Ring 1 (Inner)
-    this.ring1 = new THREE.InstancedMesh(geometry, material, this.barCount)
+    this.ring1 = new THREE.InstancedMesh(geometry, this.material, this.barCount)
     this.ring1.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
 
     // Ring 2 (Outer - Upper)
-    this.ring2 = new THREE.InstancedMesh(geometry, material, this.barCount)
+    this.ring2 = new THREE.InstancedMesh(geometry, this.material, this.barCount)
     this.ring2.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
 
     // Initialize initial matrices and colors
@@ -77,8 +80,12 @@ export default class SpectrumRings {
   setDebug() {
     if (this.debug.active) {
       const folder = this.debug.ui.addFolder('Spectrum Pylons (InstancedMesh)')
-      folder.add(this.ring1.material, 'metalness', 0, 1, 0.05)
-      folder.add(this.ring1.material, 'roughness', 0, 1, 0.05)
+      folder.add(this, 'heightScale', 0.2, 3.5, 0.1).name('Pylon Height')
+      folder.add(this, 'barThickness', 0.4, 2.5, 0.1).name('Pylon Width')
+      folder.add(this, 'radius', 3.0, 9.0, 0.1).name('Inner Ring Radius')
+      folder.add(this, 'secondaryRadius', 5.0, 12.0, 0.1).name('Outer Ring Radius')
+      folder.add(this.material, 'emissiveIntensity', 0.1, 3.0, 0.1).name('Neon Brightness')
+      folder.add(this.material, 'wireframe').name('Wireframe Pylons')
     }
   }
 
@@ -98,8 +105,8 @@ export default class SpectrumRings {
       const binIndex = Math.floor((i / this.barCount) * (dataLen * 0.65))
       const rawValue = (freqData[binIndex] || 0) / 255.0
 
-      // Dynamic height
-      const height = 0.2 + Math.pow(rawValue, 1.4) * 4.2
+      // Dynamic height multiplied by heightScale
+      const height = (0.2 + Math.pow(rawValue, 1.4) * 4.2) * this.heightScale
 
       // Position along circumference
       const x1 = Math.cos(angle) * this.radius
@@ -107,7 +114,7 @@ export default class SpectrumRings {
 
       this.dummy.position.set(x1, 0, z1)
       this.dummy.rotation.set(0, -angle + Math.PI / 2, 0)
-      this.dummy.scale.set(1, height, 1)
+      this.dummy.scale.set(this.barThickness, height, this.barThickness)
       this.dummy.updateMatrix()
 
       this.ring1.setMatrixAt(i, this.dummy.matrix)
@@ -115,11 +122,11 @@ export default class SpectrumRings {
       // Ring 2 (outer)
       const x2 = Math.cos(angle) * this.secondaryRadius
       const z2 = Math.sin(angle) * this.secondaryRadius
-      const height2 = 0.2 + Math.pow((freqData[dataLen - 1 - binIndex] || 0) / 255.0, 1.4) * 3.5
+      const height2 = (0.2 + Math.pow((freqData[dataLen - 1 - binIndex] || 0) / 255.0, 1.4) * 3.5) * this.heightScale
 
       this.dummy.position.set(x2, 0, z2)
       this.dummy.rotation.set(0, -angle + Math.PI / 2, Math.PI) // mirrored downwards
-      this.dummy.scale.set(0.9, height2, 0.9)
+      this.dummy.scale.set(this.barThickness * 0.9, height2, this.barThickness * 0.9)
       this.dummy.updateMatrix()
 
       this.ring2.setMatrixAt(i, this.dummy.matrix)
@@ -136,3 +143,4 @@ export default class SpectrumRings {
     this.ring2.material.dispose()
   }
 }
+

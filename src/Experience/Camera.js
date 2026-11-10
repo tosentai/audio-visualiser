@@ -8,12 +8,14 @@ export default class Camera {
     this.sizes = this.experience.sizes
     this.scene = this.experience.scene
     this.canvas = this.experience.canvas
+    this.debug = this.experience.debug
 
     this.shakeIntensity = 0
     this.basePosition = new THREE.Vector3(0, 4, 14)
 
     this.setInstance()
     this.setControls()
+    this.setDebug()
   }
 
   setInstance() {
@@ -36,6 +38,17 @@ export default class Camera {
     this.controls.maxPolarAngle = Math.PI / 2 + 0.15 // don't go too far under ground
     this.controls.autoRotate = true
     this.controls.autoRotateSpeed = 0.8
+  }
+
+  setDebug() {
+    if (this.debug.active) {
+      const folder = this.debug.ui.addFolder('Camera Controls')
+      folder.add(this.controls, 'autoRotate').name('Auto-Orbit')
+      folder.add(this.controls, 'autoRotateSpeed', -4.0, 4.0, 0.1).name('Orbit Speed')
+      folder.add(this.instance, 'fov', 25, 90, 1).name('Field of View (FOV)').onChange(() => {
+        this.instance.updateProjectionMatrix()
+      })
+    }
   }
 
   resize() {
@@ -64,3 +77,4 @@ export default class Camera {
     }
   }
 }
+

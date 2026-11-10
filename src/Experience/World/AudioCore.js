@@ -11,6 +11,8 @@ export default class AudioCore {
 
     this.displacementStrength = 0.85
     this.noiseSpeed = 0.9
+    this.coreBaseScale = 1.0
+    this.rotationSpeed = 1.0
 
     this.setGeometry()
     this.setMaterial()
@@ -195,9 +197,12 @@ export default class AudioCore {
   setDebug() {
     if (this.debug.active) {
       const folder = this.debug.ui.addFolder('Audio Core (Central Entity)')
-      folder.add(this.material, 'wireframe').name('Wireframe Mode')
-      folder.add(this.material.uniforms.uDisplacement, 'value', 0.1, 2.5, 0.05).name('Displacement Power')
-      folder.add(this, 'noiseSpeed', 0.1, 3.0, 0.1).name('Noise Speed')
+      folder.add(this.material, 'wireframe').name('Wireframe Core')
+      folder.add(this.material.uniforms.uDisplacement, 'value', 0.1, 3.0, 0.05).name('Displacement (Waves)')
+      folder.add(this, 'coreBaseScale', 0.5, 2.5, 0.1).name('Core Base Size')
+      folder.add(this, 'rotationSpeed', 0, 4.0, 0.1).name('Rotation Speed')
+      folder.add(this, 'noiseSpeed', 0.1, 3.0, 0.1).name('Noise Frequency')
+      folder.add(this.cageMesh, 'visible').name('Outer Cage Visible')
     }
   }
 
@@ -213,18 +218,21 @@ export default class AudioCore {
     this.material.uniforms.uMid.value = mid
     this.material.uniforms.uTreble.value = treble
 
-    // Slow organic rotation
-    this.mesh.rotation.y = elapsed * 0.15
-    this.mesh.rotation.x = elapsed * 0.08
+    // Slow organic rotation scaled by user rotationSpeed
+    this.mesh.rotation.y = elapsed * 0.15 * this.rotationSpeed
+    this.mesh.rotation.x = elapsed * 0.08 * this.rotationSpeed
+
+    // Base mesh scaling
+    this.mesh.scale.set(this.coreBaseScale, this.coreBaseScale, this.coreBaseScale)
 
     // Inner core scales with bass
-    const coreScale = 1.0 + bass * 0.65
+    const coreScale = (1.0 + bass * 0.65) * this.coreBaseScale
     this.innerMesh.scale.set(coreScale, coreScale, coreScale)
 
     // Outer cage counter-rotation and beat pulse
-    this.cageMesh.rotation.y = -elapsed * 0.25
-    this.cageMesh.rotation.z = elapsed * 0.12
-    const cageScale = 1.0 + bass * 0.18
+    this.cageMesh.rotation.y = -elapsed * 0.25 * this.rotationSpeed
+    this.cageMesh.rotation.z = elapsed * 0.12 * this.rotationSpeed
+    const cageScale = (1.0 + bass * 0.18) * this.coreBaseScale
     this.cageMesh.scale.set(cageScale, cageScale, cageScale)
     this.cageMat.opacity = 0.2 + bass * 0.35
   }
@@ -238,3 +246,4 @@ export default class AudioCore {
     this.cageMat.dispose()
   }
 }
+

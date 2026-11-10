@@ -96,3 +96,4 @@ This project is 100% static and zero-config ready for Vercel:
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
 4. Click **Deploy**. Your visualizer will be live in ~20 seconds with global CDN distribution!
+

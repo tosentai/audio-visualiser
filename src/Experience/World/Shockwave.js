@@ -83,3 +83,4 @@ export default class Shockwave {
     this.geometry.dispose()
   }
 }
+

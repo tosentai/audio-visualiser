@@ -46,6 +46,10 @@ export default class Environment {
     this.currentThemeIndex = 0
     this.theme = COLOR_THEMES[this.currentThemeIndex]
 
+    this.coreLightBase = 2.0
+    this.orbitLightBase = 1.5
+    this.lightPulseStrength = 4.0
+
     this.setFog()
     this.setLights()
     this.setDebug()
@@ -99,9 +103,13 @@ export default class Environment {
   setDebug() {
     if (this.debug.active) {
       const folder = this.debug.ui.addFolder('Environment & Lights')
-      folder.add(this.pointLight1, 'intensity', 0, 8, 0.1).name('Core Light')
-      folder.add(this.pointLight2, 'intensity', 0, 6, 0.1).name('Orbital Light 1')
-      folder.add(this.pointLight3, 'intensity', 0, 6, 0.1).name('Orbital Light 2')
+      folder.add(this, 'coreLightBase', 0, 10, 0.2).name('Core Light Base')
+      folder.add(this, 'orbitLightBase', 0, 8, 0.2).name('Orbital Light Base')
+      folder.add(this, 'lightPulseStrength', 0, 10, 0.2).name('Audio Light Pulse')
+      folder.add(this.ambientLight, 'intensity', 0, 4, 0.1).name('Ambient Light')
+      if (this.scene.fog) {
+        folder.add(this.scene.fog, 'density', 0.005, 0.08, 0.002).name('Fog Density')
+      }
     }
   }
 
@@ -109,9 +117,9 @@ export default class Environment {
     const bass = this.audio.bass
     const mid = this.audio.mid
 
-    // React point light intensity with audio
-    this.pointLight1.intensity = 2.0 + bass * 4.5
-    this.pointLight2.intensity = 1.5 + mid * 3.0
+    // React point light intensity with audio based on user base values
+    this.pointLight1.intensity = this.coreLightBase + bass * this.lightPulseStrength
+    this.pointLight2.intensity = this.orbitLightBase + mid * (this.lightPulseStrength * 0.75)
 
     // Orbit outer lights smoothly
     const elapsed = this.experience.time.elapsed
@@ -122,3 +130,4 @@ export default class Environment {
     this.pointLight3.position.z = Math.cos(-elapsed * 0.5) * 9
   }
 }
+

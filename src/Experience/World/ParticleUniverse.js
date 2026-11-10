@@ -11,10 +11,14 @@ export default class ParticleUniverse {
 
     this.count = 12000
     this.expansion = 0
+    this.particleSize = 1.0
+    this.swirlSpeed = 1.0
+    this.shockwaveForce = 1.35
 
     this.setGeometry()
     this.setMaterial()
     this.setPoints()
+    this.setDebug()
   }
 
   setGeometry() {
@@ -118,6 +122,17 @@ export default class ParticleUniverse {
     })
   }
 
+  setDebug() {
+    if (this.debug.active) {
+      const folder = this.debug.ui.addFolder('Cosmic Particles')
+      folder.add(this, 'particleSize', 0.2, 3.0, 0.1).name('Particle Size').onChange((val) => {
+        this.material.uniforms.uPixelRatio.value = this.experience.sizes.pixelRatio * val
+      })
+      folder.add(this, 'swirlSpeed', 0, 4.0, 0.1).name('Swirl Speed')
+      folder.add(this, 'shockwaveForce', 1.05, 2.0, 0.05).name('Beat Shockwave Force')
+    }
+  }
+
   setPoints() {
     this.points = new THREE.Points(this.geometry, this.material)
     this.scene.add(this.points)
@@ -147,12 +162,12 @@ export default class ParticleUniverse {
     this.material.uniforms.uBass.value = bass
     this.material.uniforms.uTreble.value = treble
 
-    // Slowly rotate galaxy
-    this.points.rotation.y = elapsed * 0.04
+    // Slowly rotate galaxy scaled by swirlSpeed
+    this.points.rotation.y = elapsed * 0.04 * this.swirlSpeed
 
     // Push particles out during heavy beat drops
     if (this.audio.isBeat) {
-      this.expansion = 1.35
+      this.expansion = this.shockwaveForce
       this.experience.camera.shake(0.08)
     } else {
       this.expansion += (1.0 - this.expansion) * 0.08
@@ -166,3 +181,4 @@ export default class ParticleUniverse {
     this.material.dispose()
   }
 }
+

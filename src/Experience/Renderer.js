@@ -52,12 +52,12 @@ export default class Renderer {
     const renderPass = new RenderPass(this.scene, this.camera.instance)
     this.composer.addPass(renderPass)
 
-    // Unreal Bloom Pass
+    // Unreal Bloom Pass - Balanced crisp neon glow
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(this.sizes.width, this.sizes.height),
-      1.4,   // strength
-      0.45,  // radius
-      0.22   // threshold
+      0.65,  // strength (reduced from 1.4 for clean, crisp visuals)
+      0.35,  // radius
+      0.35   // threshold
     )
     this.composer.addPass(this.bloomPass)
 
@@ -102,3 +102,4 @@ export default class Renderer {
     }
   }
 }
+

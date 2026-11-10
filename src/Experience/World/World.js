@@ -40,3 +40,4 @@ export default class World {
     if (this.shockwave) this.shockwave.destroy()
   }
 }
+

@@ -470,3 +470,4 @@ export default class AudioManager extends EventEmitter {
     }
   }
 }
+

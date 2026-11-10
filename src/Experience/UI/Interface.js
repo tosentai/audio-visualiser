@@ -31,12 +31,14 @@ export default class Interface {
     this.volumeSlider = document.getElementById('volume-slider')
     this.btnThemeCycle = document.getElementById('btn-theme-cycle')
     this.btnFullscreen = document.getElementById('btn-fullscreen')
+    this.timeDisplay = document.getElementById('time-display')
 
     this.setupModalEvents()
     this.setupPlaybackEvents()
     this.setupDragAndDrop()
     this.setupThemeAndFullscreen()
     this.setupAudioListeners()
+    this.setupKeyboardShortcuts()
   }
 
   setupModalEvents() {
@@ -153,6 +155,37 @@ export default class Interface {
     })
   }
 
+  setupKeyboardShortcuts() {
+    window.addEventListener('keydown', (e) => {
+      // Don't trigger shortcuts if user is typing in an input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+
+      if (e.code === 'Space') {
+        e.preventDefault()
+        if (this.modal && !this.modal.classList.contains('hidden')) {
+          this.dismissModal()
+          this.audio.startSynthBeat()
+        } else {
+          this.audio.togglePlay()
+        }
+      } else if (e.code === 'KeyT') {
+        const newTheme = this.world.environment.cycleTheme()
+        this.btnThemeCycle.textContent = `🎨 ${newTheme.name.toUpperCase().split(' ')[0]}`
+      } else if (e.code === 'KeyF') {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {})
+          this.btnFullscreen.textContent = '✕'
+        } else {
+          document.exitFullscreen().catch(() => {})
+          this.btnFullscreen.textContent = '⛶'
+        }
+      } else if (e.code === 'KeyH') {
+        // Toggle HUD for cinematic viewing
+        this.hud.classList.toggle('hidden')
+      }
+    })
+  }
+
   setupAudioListeners() {
     this.audio.on('stateChange', (data) => {
       this.trackTitle.textContent = data.title
@@ -167,6 +200,13 @@ export default class Interface {
     })
   }
 
+  formatTime(seconds) {
+    if (isNaN(seconds) || seconds < 0) return '00:00'
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
   update() {
     // Smooth frequency meter animations
     if (this.meterBass && this.audio.isPlaying) {
@@ -178,5 +218,19 @@ export default class Interface {
       this.meterMid.style.width = '0%'
       this.meterTreble.style.width = '0%'
     }
+
+    // Update time display
+    if (this.timeDisplay && this.audio.isPlaying) {
+      if (this.audio.currentMode === 'synth') {
+        const secs = Math.floor(this.experience.time.elapsed)
+        this.timeDisplay.textContent = `LIVE // ${this.formatTime(secs)}`
+      } else if (this.audio.currentMode === 'file' && this.audio.audioBuffer) {
+        const current = (this.audio.audioContext.currentTime - this.audio.startedAt) % this.audio.audioBuffer.duration
+        this.timeDisplay.textContent = `${this.formatTime(current)} / ${this.formatTime(this.audio.audioBuffer.duration)}`
+      } else if (this.audio.currentMode === 'mic') {
+        this.timeDisplay.textContent = 'MIC STREAM // LIVE'
+      }
+    }
   }
 }
+
