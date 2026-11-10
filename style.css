@@ -38,6 +38,7 @@ html, body {
   height: 100vh;
   outline: none;
   z-index: 1;
+  touch-action: none;
 }
 
 /* Modal Overlay */
